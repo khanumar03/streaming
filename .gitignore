@@ -1,0 +1,16 @@
+node_modules/
+.pnpm-store/
+
+.env
+.env.*
+!.env.example
+
+uploads/
+uploads/hls/
+uploads/live/
+data/*.json
+
+dist/
+build/
+
+.vscode/

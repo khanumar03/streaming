@@ -1,0 +1,4 @@
+allowBuilds:
+  esbuild: set this to true or false
+  event-loop-stats: false
+  msgpackr-extract: false

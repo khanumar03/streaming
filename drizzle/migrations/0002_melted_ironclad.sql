@@ -1,0 +1,1 @@
+ALTER TABLE "media" RENAME COLUMN "original_name" TO "path";
