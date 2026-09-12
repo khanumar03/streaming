@@ -34,7 +34,7 @@ export const RESOLUTION_PROFILES: Media_Resolution_Profiles[] = [
     width: 1920,
     height: 1080,
     videoBitrate: "5000k",
-    audioBitrate: "1920k",
+    audioBitrate: "192k",
   },
   {
     name: "4k",

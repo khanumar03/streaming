@@ -4,9 +4,6 @@ import ffmpeg from "fluent-ffmpeg";
 import { MediaService } from "../media/media.service.js";
 import { Media_Resolution_Profiles } from "../../types/resolution.profiles.js";
 import { RESOLUTION_PROFILES } from "../../data/default.js";
-import { db } from "../../db/index.js";
-import { media } from "../../drizzle/index.js";
-import { eq } from "drizzle-orm";
 
 export class MediaTranscoderService {
   private static async transcodeToHLS(

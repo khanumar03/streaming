@@ -94,7 +94,7 @@ export class MediaController {
     } catch (error: any) {
       console.error("Streaming Error:", error);
       if (error.message) {
-        res.status(error.cause.status).json({ error: error.message });
+        res.status(error.cause?.status || 404).json({ error: error?.message || "" });
         return;
       }
 

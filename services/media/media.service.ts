@@ -29,9 +29,13 @@ export class MediaService {
           })
           .returning();
 
-        const [_stream] = await tx.insert(stream).values({
-          mediaId: _media.id,
-        }).returning()
+        const [_stream] = await tx
+          .insert(stream)
+          .values({
+            mediaId: _media.id,
+            type: "upload",
+          })
+          .returning();
         return { _media, _stream };
       });
       return data;
@@ -108,95 +112,54 @@ export class MediaService {
     return T;
   }
 
-  // public static async stream(req: Request, id: string): Promise<StreamInfo> {
-  //   const _media = await this.getById(id);
-  //   if (!_media)
-  //     throw new Error("metadata_not_found", { cause: { status: 404 } });
-
-  //   const { reso } = req.query
-
-  //   const filePath = path.join(UPLOAD_DIR, 'hls', _media.path.split(".")[0], reso as string, 'index.m3u8');
-  //   if (!fs.existsSync(filePath))
-  //     throw new Error("media_not_found", { cause: { status: 404 } });
-
-  //   const rangeHeader = req.headers.range;
-
-  //   const stat = fs.statSync(filePath);
-  //   const fileSize = stat.size;
-  //   const contentType = _media.mimeType || "video/mp4";
-
-  //   if (rangeHeader) {
-  //     const parts = rangeHeader.replace(/bytes=/, "").split("-");
-  //     const start = parseInt(parts[0], 10);
-  //     const CHUNK_SIZE = 1024 * 1024;
-  //     const end = parts[1]
-  //       ? parseInt(parts[1], 10)
-  //       : Math.min(start + CHUNK_SIZE, fileSize - 1);
-  //     const contentLength = end - start + 1;
-
-  //     const readStream = fs.createReadStream(filePath, { start, end });
-
-  //     return {
-  //       stream: readStream,
-  //       contentLength,
-  //       contentRange: `bytes ${start}-${end}/${fileSize}`,
-  //       contentType,
-  //       isPartial: true,
-  //       fileSize,
-  //     };
-  //   }
-
-  //   return {
-  //     stream: fs.createReadStream(filePath),
-  //     contentLength: fileSize,
-  //     contentType,
-  //     isPartial: false,
-  //     fileSize,
-  //   };
-  // }
-
   public static async stream(req: Request, id: string): Promise<StreamInfo> {
-    const _media = await this.getById(id);
-    if (!_media) {
-      throw new Error("metadata_not_found", { cause: { status: 404 } });
-    }
-
-    const { reso, segment } = req.params;
-
-    if (!reso) {
-      throw new Error("resolution_required", { cause: { status: 400 } });
-    }
-
-    if (!segment) {
-      throw new Error("segment_required", { cause: { status: 400 } });
-    }
-
-    const fileId = path.parse(_media.media!.path).name;
-    const filePath = path.join(
-      UPLOAD_DIR,
-      "hls",
-      fileId,
-      reso as string,
-      segment as string,
-    );
-
-    if (!fs.existsSync(filePath)) {
-      throw new Error("media_not_found", { cause: { status: 404 } });
-    }
-
-    const stat = fs.statSync(filePath);
-    const fileSize = stat.size;
-
-    const contentType = (segment as string).endsWith(".m3u8")
-      ? "application/vnd.apple.mpegurl"
-      : "video/MP2T";
-
-    return {
-      stream: fs.createReadStream(filePath),
-      contentLength: fileSize,
-      contentType,
-      isPartial: false,
-      fileSize,
-    };
+  const _media = await this.getById(id);
+  if (!_media) {
+    throw new Error("metadata_not_found", { cause: { status: 404 } });
   }
+
+  // 1. Extract the wildcard parameter (handles array or string formats safely)
+  const rawParam = req.params[0] || (req.params as any).path;
+  
+  // 2. Normalize to a plain string path
+  const relativePath = Array.isArray(rawParam) 
+    ? rawParam.join("/") 
+    : String(rawParam || "");
+
+  if (!relativePath) {
+    throw new Error("file_path_required", { cause: { status: 400 } });
+  }
+
+  const fileId = path.parse(_media.media!.path).name;
+  
+  // 3. Now path.join safely receives plain strings
+  const filePath = path.join(
+    UPLOAD_DIR,
+    "hls",
+    fileId,
+    relativePath
+  );
+
+  if (!fs.existsSync(filePath)) {
+    throw new Error("media_not_found", { cause: { status: 404 } });
+  }
+
+  const stat = fs.statSync(filePath);
+  const fileSize = stat.size;
+
+  let contentType = "application/octet-stream";
+  if (relativePath.endsWith(".m3u8")) {
+    contentType = "application/vnd.apple.mpegurl";
+  } else if (relativePath.endsWith(".ts")) {
+    contentType = "video/MP2T";
+  }
+
+  return {
+    stream: fs.createReadStream(filePath),
+    contentLength: fileSize,
+    contentType,
+    isPartial: false,
+    fileSize,
+  };
+}
 }
