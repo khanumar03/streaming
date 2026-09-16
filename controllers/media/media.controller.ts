@@ -44,13 +44,11 @@ export class MediaController {
     }
   }
 
+  public static async init(req: Request, res: Response) {}
+
   public static async upload(req: Request, res: Response): Promise<void> {
     try {
       const metadata = await MediaService.create(req);
-
-      // MediaTranscoderService.transcode(metadata._stream.id).catch((reason) =>
-      //   console.log(reason),
-      // );
 
       tq.add("transcode-hls", { id: metadata._stream.id } );
 

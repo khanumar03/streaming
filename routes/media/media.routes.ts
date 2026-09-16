@@ -6,6 +6,7 @@ const router = Router();
 router.get("/", MediaController.get)
 router.get("/:id", MediaController.getById)
 router.get("/stream/:id/*path", MediaController.stream)
+router.get("/upload", MediaController.init)
 router.post("/upload", MediaController.upload);
 
 export default router;
